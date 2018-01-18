@@ -35,6 +35,11 @@ static void update_screen(Chip8 *chip8, SDL_Texture *texture, SDL_Renderer *rend
 
 int main(int argc, char **argv)
 {
+    if (argc < 2) {
+        printf("Usage: %s <ROM FILE>\n", *argv);
+        exit(1);
+    }
+
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
     SDL_Texture *texture = NULL;
@@ -44,10 +49,7 @@ int main(int argc, char **argv)
     Chip8 chip8;
 
 	init_chip8(&chip8);
-	if (argc > 1)
-		load_rom(&chip8, argv[1]);
-	else
-		load_rom(&chip8, "roms/INVADERS");
+    load_rom(&chip8, argv[1]);
 
     while (1) {
         cycle(&chip8);
@@ -116,7 +118,7 @@ static void init_window(SDL_Window **window, const char * const title)
 {
     *window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED,
             SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT,
-            SDL_WINDOW_OPENGL);
+            SDL_WINDOW_SHOWN);
 
     if (!*window) {
         fprintf(stderr, "ERROR CREATING WINDOW\n");
@@ -173,7 +175,7 @@ static void update_screen(Chip8 *chip8, SDL_Texture *texture, SDL_Renderer *rend
         uint8_t pixel_is_on = chip8->gfx[i];
         pixels[i] = pixel_is_on ? 0xFFFFFFFF : 0x0;
     }
-    SDL_UpdateTexture(texture, NULL, pixels, CHIP8_DISPLAY_WIDTH * sizeof(Uint32));
+    SDL_UpdateTexture(texture, NULL, pixels, 64 * sizeof(Uint32));
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
