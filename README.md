@@ -5,7 +5,7 @@ An interpreter for the CHIP-8 programming language written in C
 
 
 CHIP-8 CHIP-8 is an interpreted programming language developed by Joseph Weisbecker in the 1970's.
-It was initially used on the COSMAC VIP and Telmac 1800 8-bit microcomputers. CHIP-8 programs are meant to be run on a virtual machine, although call it an _emulator_, because most of the implementations try to emulate the machines in which it was originally developed and used. Its main objective was to simplify videogame programming at the time, for the machines it was intended for.
+It was initially used on the COSMAC VIP and Telmac 1800 8-bit microcomputers. CHIP-8 programs are meant to be run on a virtual machine, although some people call it an _emulator_, because most of the implementations try to emulate the machines in which it was originally developed and used. Its main objective was to simplify videogame programming at the time, for the machines it was intended for.
 
 # Screenshots
 
