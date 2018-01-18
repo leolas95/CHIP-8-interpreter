@@ -3,7 +3,10 @@
 #include "SDL2/SDL.h"
 #include "chip8.h"
 
-unsigned char keymap[16] = {
+#define WINDOW_WIDTH 1024
+#define WINDOW_HEIGHT 512
+
+unsigned char keymap[MAX_KEYPAD_KEYS] = {
     SDLK_1,
     SDLK_2,
     SDLK_3,
@@ -24,10 +27,10 @@ unsigned char keymap[16] = {
 
 static void init_graphics(SDL_Window **, SDL_Renderer **, SDL_Texture **);
 static void init_SDL(void);
-static inline void init_window(SDL_Window **, const char * const title);
-static inline void init_renderer(SDL_Renderer **, SDL_Window *window);
-static inline void init_texture(SDL_Texture **, SDL_Renderer **renderer);
-void update_screen(Chip8 *chip8, SDL_Texture *texture, SDL_Renderer *renderer);
+static void init_window(SDL_Window **, const char * const title);
+static void init_renderer(SDL_Renderer **, SDL_Window *window);
+static void init_texture(SDL_Texture **, SDL_Renderer **renderer);
+static void update_screen(Chip8 *chip8, SDL_Texture *texture, SDL_Renderer *renderer);
 /*static void draw_ascii(Chip8 *);*/
 
 int main(int argc, char **argv)
@@ -56,8 +59,9 @@ int main(int argc, char **argv)
 
             /* Handle keydown event */
             if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.sym == SDLK_ESCAPE)
+                if (e.key.keysym.sym == SDLK_ESCAPE) {
                     exit(0);
+                }
 
                 for (int i = 0; i < 16; i++) {
                     if (e.key.keysym.sym == keymap[i]) {
@@ -108,27 +112,34 @@ void init_SDL(void)
     }
 }
 
-static inline void init_window(SDL_Window **window, const char * const title)
+static void init_window(SDL_Window **window, const char * const title)
 {
-    *window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 512, SDL_WINDOW_SHOWN);
+    *window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED,
+            SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT,
+            SDL_WINDOW_OPENGL);
+
     if (!*window) {
         fprintf(stderr, "ERROR CREATING WINDOW\n");
         exit(1);
     }
 }
 
-static inline void init_renderer(SDL_Renderer **renderer, SDL_Window *window)
+static void init_renderer(SDL_Renderer **renderer, SDL_Window *window)
 {
     *renderer = SDL_CreateRenderer(window, -1, 0);
+
     if (!*renderer) {
         fprintf(stderr, "ERROR CREATING RENDERER\n");
         exit(1);
     }
 }
 
-static inline void init_texture(SDL_Texture **texture, SDL_Renderer **renderer)
+static void init_texture(SDL_Texture **texture, SDL_Renderer **renderer)
 {
-    *texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 64, 32);
+    *texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888,
+            SDL_TEXTUREACCESS_STREAMING, CHIP8_DISPLAY_WIDTH,
+            CHIP8_DISPLAY_HEIGHT);
+
     if (!*texture) {
         fprintf(stderr, "ERROR CREATING TEXTURE\n");
         exit(1);
@@ -153,16 +164,16 @@ void draw_ascii(Chip8 *chip8)
     putchar('\n');
 }*/
 
-void update_screen(Chip8 *chip8, SDL_Texture *texture, SDL_Renderer *renderer)
+static void update_screen(Chip8 *chip8, SDL_Texture *texture, SDL_Renderer *renderer)
 {
     chip8->shouldDraw = false;
     uint32_t pixels[2048];
 
-    for (int i = 0; i < 2048; i++) {
+    for (int i = 0; i < CHIP8_DISPLAY_SIZE; i++) {
         uint8_t pixel_is_on = chip8->gfx[i];
         pixels[i] = pixel_is_on ? 0xFFFFFFFF : 0x0;
     }
-    SDL_UpdateTexture(texture, NULL, pixels, 64 * sizeof(Uint32));
+    SDL_UpdateTexture(texture, NULL, pixels, CHIP8_DISPLAY_WIDTH * sizeof(Uint32));
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);

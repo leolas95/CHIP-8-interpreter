@@ -3,12 +3,13 @@
 
 #include <stdbool.h>
 
-#define DISPLAY_SIZE (64 * 32)
-#define CHIP8_MEMSIZE (4096)  /* 4K */
-#define REGISTERS 16
-#define MAX_STACK_LEVELS 16
-#define MAX_KEYPAD_KEYS 16
-
+#define CHIP8_DISPLAY_WIDTH  64
+#define CHIP8_DISPLAY_HEIGHT 32
+#define CHIP8_DISPLAY_SIZE   (CHIP8_DISPLAY_WIDTH * CHIP8_DISPLAY_HEIGHT)
+#define CHIP8_MEMSIZE        (4096)  /* 4K */
+#define REGISTERS            16
+#define MAX_STACK_LEVELS     16
+#define MAX_KEYPAD_KEYS      16
 
 typedef struct chip8 {
 	unsigned short opcode;                   /* The current opcode */
@@ -16,7 +17,7 @@ typedef struct chip8 {
 	unsigned char  V[REGISTERS];             /* The V registers (V0-VF) */
 	unsigned short I;                        /* I register (Address register). 16 bits wide */
 	unsigned short pc;			 /* Program counter */
-	unsigned char  gfx[DISPLAY_SIZE];        /* Graphics */
+	unsigned char  gfx[CHIP8_DISPLAY_SIZE];  /* Graphics */
 	unsigned char  delay_timer;
 	unsigned char  sound_timer;
 	unsigned short stack[MAX_STACK_LEVELS];  /* Stack. We support maximum 16 levels of nesting */
