@@ -113,3 +113,4 @@ This is a list of the various resources that I used to develop the interpreter:
 * https://en.wikipedia.org/wiki/CHIP-8
 https://www.libsdl.org/download-2.0.php (Main SDL download page)
 * https://wiki.libsdl.org/Installation#Linux.2FUnix (Instructions to install SDL on Linux)
+* https://www.zophar.net/pdroms/chip8.html (Link to download public domain CHIP-8 game ROMS)
