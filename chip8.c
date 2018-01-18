@@ -4,6 +4,8 @@
 #include <time.h>
 #include "chip8.h"
 
+#define CHIP8_FONTSET_LEN 80
+
 #define OP_FAMILY(opcode) ((opcode) & (0xF000))
 #define OP_NNN(opcode) ((opcode) & (0x0FFF))
 #define OP_NN(opcode)  ((opcode) & (0x00FF))
@@ -11,7 +13,8 @@
 #define OP_X(opcode)   (((opcode) & (0x0F00)) >> 8)
 #define OP_Y(opcode)   (((opcode) & (0x00F0)) >> 4)
 
-static unsigned char chip8_fontset[80] =
+
+static unsigned char chip8_fontset[CHIP8_FONTSET_LEN] =
 {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -64,15 +67,15 @@ void init_chip8(Chip8 *chip8)
     memset(chip8->gfx, 0, sizeof(chip8->gfx));
 
     /* Clear stack, registers V0-VF and keypad */
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < REGISTERS; i++) {
         chip8->stack[i] = chip8->V[i] = chip8->key[i] = 0;
     }
 
     /* Clear memory  */
-    memset(chip8->memory, 0, 4096);
+    memset(chip8->memory, 0, CHIP8_MEMSIZE);
 
     /* Load fontset */
-    memcpy(chip8->memory, chip8_fontset, 80);
+    memcpy(chip8->memory, chip8_fontset, CHIP8_FONTSET_LEN);
 
     /* Reset timers */
     chip8->delay_timer = chip8->sound_timer = 0;
@@ -87,19 +90,19 @@ void load_rom(Chip8 *chip8, const char * const filename)
         fprintf(stderr, "ERROR OPENING ROM FILE: %s\n", filename);
         exit(1);
     } else {
-        printf("ROM FILE OPENED SUCCESFULLY\n");
+        printf("load_rom: ROM FILE \'%s\' OPENED SUCCESFULLY\n", filename);
     }
 
     /* Get rom size */
     long rom_size = get_rom_size(rom);
 
-    printf("ROM SIZE: %zu\n", rom_size);
+    printf("ROM SIZE: %zu bytes\n", rom_size);
 
     /* As the first 512 bytes are reserved, we only have 4096 - 512 = 3584
      * bytes for application memory. If the rom is larger than that, it
      * will not fit into memory */
-    if (rom_size > (4096 - 512)) {
-        fprintf(stderr, "ROM IS TOO BIG TO FIT INTO MEMORY (%ld bytes)\n", rom_size);
+    if (rom_size > (CHIP8_MEMSIZE - 512)) {
+        fprintf(stderr, "load_rom: ROM IS TOO BIG TO FIT INTO MEMORY (%ld bytes)\n", rom_size);
         exit(1);
     }
 
@@ -132,6 +135,7 @@ void cycle(Chip8 *chip8)
     printf("OPCODE 0x%04X\n", chip8->opcode);
 #endif
 
+    printf("family: %04X\n", OP_FAMILY(chip8->opcode));
     /* WARNING: Really big switch statement. Not for the faint of heart. */
     switch (OP_FAMILY(chip8->opcode)) {
         case 0x0000:
