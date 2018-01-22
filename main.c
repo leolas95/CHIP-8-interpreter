@@ -6,9 +6,17 @@
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 512
 
+#define COLOR_BLACK 0x00000000
+#define COLOR_WHITE 0xFFFFFFFF
+
+static void handle_input(Chip8 *, SDL_Event *);
+static void handle_key_down(Chip8 *, SDL_Event *);
+static void handle_key_up(Chip8 *, SDL_Event *);
+
 static void die(const char * const msg)
 {
     fprintf(stderr, msg);
+    perror(msg);
     exit(EXIT_FAILURE);
 }
 
@@ -35,7 +43,7 @@ static void init_graphics(SDL_Window **, SDL_Renderer **, SDL_Texture **);
 static void init_SDL(void);
 static void init_window(SDL_Window **, const char * const title);
 static void init_renderer(SDL_Renderer **, SDL_Window *window);
-static void init_texture(SDL_Texture **, SDL_Renderer **renderer);
+static void init_texture(SDL_Texture **, SDL_Renderer *renderer);
 static void update_screen(Chip8 *chip8, SDL_Texture *texture, SDL_Renderer *renderer);
 /*static void draw_ascii(Chip8 *);*/
 
@@ -64,27 +72,7 @@ int main(int argc, char **argv)
             if (e.type == SDL_QUIT)
                 exit(EXIT_SUCCESS);
 
-            /* Handle keydown event */
-            if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.sym == SDLK_ESCAPE) {
-                    exit(EXIT_SUCCESS);
-                }
-
-                for (int i = 0; i < 16; i++) {
-                    if (e.key.keysym.sym == keymap[i]) {
-                        chip8.key[i] = 1;
-                    }
-                }
-            }
-
-            /* Handle keyup event */
-            if (e.type == SDL_KEYUP) {
-                for (int i = 0; i < 16; i++) {
-                    if (e.key.keysym.sym == keymap[i]) {
-                        chip8.key[i] = 0;
-                    }
-                }
-            }
+            handle_input(&chip8, &e);
         }
 
         if (chip8.shouldDraw) {
@@ -105,7 +93,7 @@ static void init_graphics(SDL_Window **window, SDL_Renderer **renderer, SDL_Text
     init_renderer(renderer, *window);
     SDL_RenderSetLogicalSize(*renderer, 1024, 512);
 
-    init_texture(texture, renderer);
+    init_texture(texture, *renderer);
 }
 
 /* Initializes SDL */
@@ -138,9 +126,9 @@ static void init_renderer(SDL_Renderer **renderer, SDL_Window *window)
     }
 }
 
-static void init_texture(SDL_Texture **texture, SDL_Renderer **renderer)
+static void init_texture(SDL_Texture **texture, SDL_Renderer *renderer)
 {
-    *texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888,
+    *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
             SDL_TEXTUREACCESS_STREAMING, CHIP8_DISPLAY_WIDTH,
             CHIP8_DISPLAY_HEIGHT);
 
@@ -167,6 +155,41 @@ void draw_ascii(Chip8 *chip8)
     putchar('\n');
 }*/
 
+static void handle_input(Chip8 *chip8, SDL_Event *e)
+{
+    switch (e->type) {
+        case SDL_KEYDOWN:
+            handle_key_down(chip8, e);
+            break;
+        case SDL_KEYUP:
+            handle_key_up(chip8, e);
+            break;
+    }
+}
+
+static void handle_key_down(Chip8 *chip8, SDL_Event *e)
+{
+    if (e->key.keysym.sym == SDLK_ESCAPE) {
+        exit(EXIT_SUCCESS);
+    }
+
+    for (int i = 0; i < 16; i++) {
+        if (e->key.keysym.sym == keymap[i]) {
+            chip8->key[i] = 1;
+        }
+    }
+}
+
+
+static void handle_key_up(Chip8 *chip8, SDL_Event *e)
+{
+    for (int i = 0; i < 16; i++) {
+        if (e->key.keysym.sym == keymap[i]) {
+            chip8->key[i] = 0;
+        }
+    }
+}
+
 static void update_screen(Chip8 *chip8, SDL_Texture *texture, SDL_Renderer *renderer)
 {
     chip8->shouldDraw = false;
@@ -174,7 +197,7 @@ static void update_screen(Chip8 *chip8, SDL_Texture *texture, SDL_Renderer *rend
 
     for (int i = 0; i < CHIP8_DISPLAY_SIZE; i++) {
         uint8_t pixel_is_on = chip8->gfx[i];
-        pixels[i] = pixel_is_on ? 0xFFFFFFFF : 0x0;
+        pixels[i] = pixel_is_on ? COLOR_WHITE : COLOR_BLACK;
     }
     SDL_UpdateTexture(texture, NULL, pixels, 64 * sizeof(Uint32));
     SDL_RenderClear(renderer);

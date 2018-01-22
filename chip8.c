@@ -8,6 +8,8 @@
 #define CHIP8_FONTSET_LEN 80
 
 #define OPCODE_FAMILY(opcode) ((opcode) & (0xF000))
+#define HIGH_BYTE(chip8) (chip8->memory[chip8->pc] << 8)
+#define LOW_BYTE(chip8) (chip8->memory[chip8->pc+1])
 
 /* Fontset of the CHIP-8 interpreter */
 static unsigned char chip8_fontset[CHIP8_FONTSET_LEN] =
@@ -72,7 +74,7 @@ static void debug_status(Chip8 *chip8)
 #endif
 
 static long get_rom_size(FILE * const);
-static inline unsigned short fetch_opcode(const Chip8 * const);
+static inline uint16_t fetch_opcode(const Chip8 * const);
 
 /* Initializes the interpreter */
 void init_chip8(Chip8 *chip8)
@@ -91,9 +93,14 @@ void init_chip8(Chip8 *chip8)
     /* Clear display */
     memset(chip8->gfx, 0, sizeof(chip8->gfx));
 
-    /* Clear stack, registers V0-VF and keypad */
+    /* Clear stack */
+    for (int i = 0; i < MAX_STACK_LEVELS; i++) {
+        chip8->stack[i] = 0;
+    }
+
+    /* Clear registers V0-VF and keypad */
     for (int i = 0; i < REGISTERS; i++) {
-        chip8->stack[i] = chip8->V[i] = chip8->key[i] = 0;
+        chip8->V[i] = chip8->key[i] = 0;
     }
 
     /* Clear memory  */
@@ -113,10 +120,10 @@ void load_rom(Chip8 *chip8, const char * const filename)
     FILE *rom = fopen(filename, "r");
 
     if (!rom) {
-        fprintf(stderr, "ERROR OPENING ROM FILE: %s\n", filename);
+        fprintf(stderr, "%s(): ERROR: COULD NOT OPEN ROM FILE \'%s\'.\n", __func__, filename);
         exit(1);
     } else {
-        printf("load_rom: ROM FILE \'%s\' OPENED SUCCESFULLY\n", filename);
+        printf("%s(): ROM FILE \'%s\' OPENED SUCCESFULLY\n", __func__, filename);
     }
 
     /* Get rom size */
@@ -128,16 +135,16 @@ void load_rom(Chip8 *chip8, const char * const filename)
      * bytes for application memory. If the rom is larger than that, it
      * will not fit into memory */
     if (rom_size > (CHIP8_MEMSIZE - 512)) {
-        fprintf(stderr, "load_rom: ROM IS TOO BIG TO FIT INTO MEMORY (%ld bytes)\n", rom_size);
+        fprintf(stderr, "%s(): ROM IS TOO BIG TO FIT INTO MEMORY (%ld bytes)\n", __func__, rom_size);
         exit(1);
     }
 
     /* Read the program into working memory. As we are reading chars, make
      * sure that the amount read equals file lenght */
-    size_t bytes_read = fread(chip8->memory+0x200, sizeof(unsigned char), rom_size, rom);
+    size_t bytes_read = fread(chip8->memory+0x200, sizeof(uint8_t), rom_size, rom);
 
     if (bytes_read != rom_size) {
-        fprintf(stderr, "ERROR READING ROM FILE\n");
+        fprintf(stderr, "%s(): ERROR READING ROM FILE\n", __func__);
         fclose(rom);
         exit(1);
     }
@@ -153,7 +160,7 @@ void cycle(Chip8 *chip8)
     chip8->opcode = fetch_opcode(chip8);
 
     /* Decode */
-    unsigned char family = OPCODE_FAMILY(chip8->opcode) >> 12;
+    uint8_t family = OPCODE_FAMILY(chip8->opcode) >> 12;
 
     /* Execute */
     opcodes_table[family](chip8);
@@ -185,9 +192,9 @@ static long get_rom_size(FILE * const rom)
 }
 
 /* Returns the next opcode of the program */
-static inline unsigned short fetch_opcode(const Chip8 * const chip8)
+static inline uint16_t fetch_opcode(const Chip8 * const chip8)
 {
     /* Get the first byte, move it to the left to make room for the second one
      * and OR them to form a short */
-    return (chip8->memory[chip8->pc] << 8) | (chip8->memory[chip8->pc+1]);
+    return HIGH_BYTE(chip8) | LOW_BYTE(chip8);
 }

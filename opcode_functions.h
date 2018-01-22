@@ -3,7 +3,6 @@
 
 #include "chip8.h"
 
-void die(const char * const, unsigned short arg);
 void family_0(Chip8 * const);
 void opcode_1(Chip8 * const);
 void opcode_2(Chip8 * const);

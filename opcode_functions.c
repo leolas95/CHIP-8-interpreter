@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "opcode_functions.h"
-#include "chip8.h"
 
 /* Macros to get the arguments of the opcode */
 #define OPCODE_NNN(opcode) ((opcode)  & (0x0FFF))
@@ -18,9 +17,9 @@
 #define OPCODE_Y(opcode)   (((opcode) & (0x00F0)) >> 4)
 
 /* Prints msg to stderr and exits */
-void die(const char * const msg, unsigned short arg)
+static void die(const char * const msg, uint16_t opcode)
 {
-    fprintf(stderr, msg, arg);
+    fprintf(stderr, msg, opcode);
     exit(EXIT_FAILURE);
 }
 
@@ -52,7 +51,7 @@ void family_0(Chip8 * const chip8)
 void opcode_1(Chip8 * const chip8)
 {
     /* If trying to access a memory location out of range, we die */
-    unsigned short addr = OPCODE_NNN(chip8->opcode);
+    uint16_t addr = OPCODE_NNN(chip8->opcode);
     if (addr > 0xFFF || addr < 0x200) {
         die("ERROR: ADDRESS 0x%04X OUT OF VALID RANGE\n", addr);
     }
@@ -62,7 +61,7 @@ void opcode_1(Chip8 * const chip8)
 /* 2NNN: Calls subroutine at address NNN */
 void opcode_2(Chip8 * const chip8)
 {
-    unsigned short addr = OPCODE_NNN(chip8->opcode);
+    uint16_t addr = OPCODE_NNN(chip8->opcode);
     if (addr > 0xFFF || addr < 0x200) {
         die("ERROR: ADDRESS 0x%04X OUT OF VALID RANGE\n", addr);
     }
@@ -152,8 +151,8 @@ void family_8(Chip8 * const chip8)
             chip8->V[OPCODE_X(chip8->opcode)] += chip8->V[OPCODE_Y(chip8->opcode)];
             break;
 
-        /* 8XY5: VY is substracted from VX. VF is set to 0 when there's
-         * a borrow, and to 1 when there isn't. VX = VX - VY */
+        /* 8XY5: VX = VX - VY. Subtract the value of register VY from register
+         * VX. Set VF to 0 if a borrow occurs, to 1 otherwise. */
         case 0x5:
             if (chip8->V[OPCODE_Y(chip8->opcode)] > chip8->V[OPCODE_X(chip8->opcode)]) {
                 /* Borrow */
@@ -171,18 +170,20 @@ void family_8(Chip8 * const chip8)
          * bit prior to the shift */
         case 0x6:
             chip8->V[0xF] = chip8->V[OPCODE_X(chip8->opcode)] & 0x01;
-            chip8->V[OPCODE_X(chip8->opcode)] = chip8->V[OPCODE_Y(chip8->opcode)] >> 1;
+            chip8->V[OPCODE_X(chip8->opcode)] = (chip8->V[OPCODE_Y(chip8->opcode)] >>= 1);
             break;
 
-        /* 8XY7: If VY > VX, then VF is set to 1, otherwise to 0. Then VX is
-         * substracted from VY, and the results stored in VX. VX = VY - VX */
+        /* 8XY7: VX = VY - VX. Set register VX to the value of VY minus VX
+         * Set VF to 0 if a borrow occurs, to 1 otherwise. */
         case 0x7:
-            if (chip8->V[OPCODE_Y(chip8->opcode)] > chip8->V[OPCODE_X(chip8->opcode)])
-                /* No borrow */
-                chip8->V[0xF] = 1;
-            else
+            if (chip8->V[OPCODE_X(chip8->opcode)] > chip8->V[OPCODE_Y(chip8->opcode)]) {
                 /* Borrow */
                 chip8->V[0xF] = 0;
+            } else {
+                /* No borrow */
+                chip8->V[0xF] = 1;
+            }
+
             chip8->V[OPCODE_X(chip8->opcode)] = chip8->V[OPCODE_Y(chip8->opcode)] - chip8->V[OPCODE_X(chip8->opcode)];
             break;
 
@@ -191,7 +192,7 @@ void family_8(Chip8 * const chip8)
          * prior to the shift. */
         case 0xE:
             chip8->V[0xF] = chip8->V[OPCODE_X(chip8->opcode)] & 0x80;
-            chip8->V[OPCODE_X(chip8->opcode)] = chip8->V[OPCODE_Y(chip8->opcode)] << 1;
+            chip8->V[OPCODE_X(chip8->opcode)] = (chip8->V[OPCODE_Y(chip8->opcode)] <<= 1);
             break;
 
         default:
@@ -241,10 +242,10 @@ void opcode_C(Chip8 * const chip8)
  * when the sprite is drawn, and to 0 if that doesn't happen */
 void opcode_D(Chip8 * const chip8)
 {
-    unsigned short x = chip8->V[OPCODE_X(chip8->opcode)];
-    unsigned short y = chip8->V[OPCODE_Y(chip8->opcode)];
-    unsigned short height = OPCODE_N(chip8->opcode);
-    unsigned short pixel;
+    uint8_t x = chip8->V[OPCODE_X(chip8->opcode)];
+    uint8_t y = chip8->V[OPCODE_Y(chip8->opcode)];
+    uint8_t height = OPCODE_N(chip8->opcode);
+    uint8_t pixel;
 
     chip8->V[0xF] = 0;
     for (int yline = 0; yline < height; yline++) {
