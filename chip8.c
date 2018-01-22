@@ -58,8 +58,13 @@ void (*opcodes_table[])(Chip8 * const) =
 static void debug_status(Chip8 *chip8)
 {
     puts("SYSTEM STATUS:");
-    for (int i = 0; i <= 0xF; i++)
-        printf("V%c = %d\n", (i >= 0xA) ? ('A' + i - 10) : (chip8->V[i]), chip8->V[i]);
+    for (int i = 0; i <= 0xF; i++) {
+        if (i < 0xA) {
+            printf("V%d = %d\n", i, chip8->V[i]);
+        } else {
+            printf("V%c = %d\n", 'A' + i - 10, chip8->V[i]);
+        }
+    }
     printf("PC = 0x%X\n", chip8->pc);
     printf("I = 0x%X\n", chip8->I);
     printf("SP = 0x%X\n\n", *(chip8->stack + chip8->sp));

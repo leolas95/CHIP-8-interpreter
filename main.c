@@ -6,6 +6,12 @@
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 512
 
+static void die(const char * const msg)
+{
+    fprintf(stderr, msg);
+    exit(EXIT_FAILURE);
+}
+
 unsigned char keymap[MAX_KEYPAD_KEYS] = {
     SDLK_1,
     SDLK_2,
@@ -37,19 +43,18 @@ int main(int argc, char **argv)
 {
     if (argc < 2) {
         printf("Usage: %s <ROM FILE>\n", *argv);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
+    
+    Chip8 chip8;
+	init_chip8(&chip8);
+    load_rom(&chip8, argv[1]);
 
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
     SDL_Texture *texture = NULL;
 
     init_graphics(&window, &renderer, &texture);
-    
-    Chip8 chip8;
-
-	init_chip8(&chip8);
-    load_rom(&chip8, argv[1]);
 
     while (1) {
         cycle(&chip8);
@@ -57,12 +62,12 @@ int main(int argc, char **argv)
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT)
-                exit(0);
+                exit(EXIT_SUCCESS);
 
             /* Handle keydown event */
             if (e.type == SDL_KEYDOWN) {
                 if (e.key.keysym.sym == SDLK_ESCAPE) {
-                    exit(0);
+                    exit(EXIT_SUCCESS);
                 }
 
                 for (int i = 0; i < 16; i++) {
@@ -95,7 +100,7 @@ static void init_graphics(SDL_Window **window, SDL_Renderer **renderer, SDL_Text
 {
     init_SDL();
 
-    init_window(window, "Chip 8 emulator by Leonardo Guedez");
+    init_window(window, "Chip 8 interpreter by Leonardo Guedez");
 
     init_renderer(renderer, *window);
     SDL_RenderSetLogicalSize(*renderer, 1024, 512);
@@ -107,8 +112,7 @@ static void init_graphics(SDL_Window **window, SDL_Renderer **renderer, SDL_Text
 void init_SDL(void)
 {
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-        fprintf(stderr, "ERROR INITIALIZING SDL\n");
-        exit(1);
+        die("ERROR INITIALIZING SDL\n");
     } else {
         printf("SDL INIT WENT OK\n");
     }
@@ -121,8 +125,7 @@ static void init_window(SDL_Window **window, const char * const title)
             SDL_WINDOW_SHOWN);
 
     if (!*window) {
-        fprintf(stderr, "ERROR CREATING WINDOW\n");
-        exit(1);
+        die("ERROR CREATING WINDOW\n");
     }
 }
 
@@ -131,8 +134,7 @@ static void init_renderer(SDL_Renderer **renderer, SDL_Window *window)
     *renderer = SDL_CreateRenderer(window, -1, 0);
 
     if (!*renderer) {
-        fprintf(stderr, "ERROR CREATING RENDERER\n");
-        exit(1);
+        die("ERROR CREATING RENDERER\n");
     }
 }
 
@@ -143,8 +145,7 @@ static void init_texture(SDL_Texture **texture, SDL_Renderer **renderer)
             CHIP8_DISPLAY_HEIGHT);
 
     if (!*texture) {
-        fprintf(stderr, "ERROR CREATING TEXTURE\n");
-        exit(1);
+        die("ERROR CREATING TEXTURE\n");
     }
 }
 

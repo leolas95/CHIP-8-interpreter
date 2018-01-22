@@ -1,4 +1,6 @@
 chip8
 debug
-ctags
+tags
 log
+*.*.swp
+*.*~

@@ -17,6 +17,13 @@
 #define OPCODE_X(opcode)   (((opcode) & (0x0F00)) >> 8)
 #define OPCODE_Y(opcode)   (((opcode) & (0x00F0)) >> 4)
 
+/* Prints msg to stderr and exits */
+void die(const char * const msg, unsigned short arg)
+{
+    fprintf(stderr, msg, arg);
+    exit(EXIT_FAILURE);
+}
+
 void family_0(Chip8 * const chip8)
 {
 /* Maybe we could create another table for each opcode that has a family?
@@ -36,8 +43,7 @@ void family_0(Chip8 * const chip8)
             break;
 
         default:
-            fprintf(stderr, "[0x0000] OPCODE 0x%04X NOT RECOGNIZED\n", chip8->opcode);
-            exit(1);
+            die("[0x0000] OPCODE 0x%04X NOT RECOGNIZED\n", chip8->opcode);
     }
     chip8->pc += 2;
 }
@@ -45,15 +51,25 @@ void family_0(Chip8 * const chip8)
 /* 1NNN: Jumps to address NNN */
 void opcode_1(Chip8 * const chip8)
 {
+    /* If trying to access a memory location out of range, we die */
+    unsigned short addr = OPCODE_NNN(chip8->opcode);
+    if (addr > 0xFFF || addr < 0x200) {
+        die("ERROR: ADDRESS 0x%04X OUT OF VALID RANGE\n", addr);
+    }
     chip8->pc = OPCODE_NNN(chip8->opcode);
 }
 
 /* 2NNN: Calls subroutine at address NNN */
 void opcode_2(Chip8 * const chip8)
 {
+    unsigned short addr = OPCODE_NNN(chip8->opcode);
+    if (addr > 0xFFF || addr < 0x200) {
+        die("ERROR: ADDRESS 0x%04X OUT OF VALID RANGE\n", addr);
+    }
+
     chip8->stack[chip8->sp] = chip8->pc;
     chip8->sp++;
-    chip8->pc = OPCODE_NNN(chip8->opcode);
+    chip8->pc = addr;
 }
 
 /* 3XNN: Skips the next instruction if VX equals NN */
@@ -137,27 +153,29 @@ void family_8(Chip8 * const chip8)
             break;
 
         /* 8XY5: VY is substracted from VX. VF is set to 0 when there's
-         * a borrow, and to 1 when there isn't*/
+         * a borrow, and to 1 when there isn't. VX = VX - VY */
         case 0x5:
-            if (chip8->V[OPCODE_X(chip8->opcode)] > chip8->V[OPCODE_Y(chip8->opcode)]) {
-                /* No borrow */
-                chip8->V[0xF] = 1;
-            } else {
+            if (chip8->V[OPCODE_Y(chip8->opcode)] > chip8->V[OPCODE_X(chip8->opcode)]) {
                 /* Borrow */
                 chip8->V[0xF] = 0;
+            } else {
+                /* No borrow */
+                chip8->V[0xF] = 1;
             }
+            
             chip8->V[OPCODE_X(chip8->opcode)] -= chip8->V[OPCODE_Y(chip8->opcode)];
             break;
 
-        /* 8XY6: If the least significant bit of VX is 1, then VF is set
-         * to 1, otherwise to 0. Then VX is divided by 2.*/
+        /* 8XY6: VX = VY >> 1. Store the value of register VY shifted right
+         * one bit in register VX. Set register VF to the least significant
+         * bit prior to the shift */
         case 0x6:
             chip8->V[0xF] = chip8->V[OPCODE_X(chip8->opcode)] & 0x01;
-            chip8->V[OPCODE_X(chip8->opcode)] >>= 1;
+            chip8->V[OPCODE_X(chip8->opcode)] = chip8->V[OPCODE_Y(chip8->opcode)] >> 1;
             break;
 
         /* 8XY7: If VY > VX, then VF is set to 1, otherwise to 0. Then VX is
-         * substracted from VY, and the results stored in VX */
+         * substracted from VY, and the results stored in VX. VX = VY - VX */
         case 0x7:
             if (chip8->V[OPCODE_Y(chip8->opcode)] > chip8->V[OPCODE_X(chip8->opcode)])
                 /* No borrow */
@@ -168,17 +186,18 @@ void family_8(Chip8 * const chip8)
             chip8->V[OPCODE_X(chip8->opcode)] = chip8->V[OPCODE_Y(chip8->opcode)] - chip8->V[OPCODE_X(chip8->opcode)];
             break;
 
-        /* 8XYE: IF the most significant bit of VX es 1, then VF is set
-         * to 1, otherwise to 0. Then VX is multiplied by 2 */
+        /* 8XYE: VX = VY << 1. Store the value of register VY shifted left one
+         * bit in register VX. Set register VF to the most significant bit
+         * prior to the shift. */
         case 0xE:
             chip8->V[0xF] = chip8->V[OPCODE_X(chip8->opcode)] & 0x80;
-            chip8->V[OPCODE_X(chip8->opcode)] <<= 1;
+            chip8->V[OPCODE_X(chip8->opcode)] = chip8->V[OPCODE_Y(chip8->opcode)] << 1;
             break;
 
         default:
-            fprintf(stderr, "[8XNN] OPCODE 0x%04X NOT RECOGNIZED\n", chip8->opcode);
-            exit(1);
+            die("[8XNN] OPCODE 0x%04X NOT RECOGNIZED\n", chip8->opcode);
         } /* 8XYN switch */
+
     chip8->pc += 2;
 }
 
@@ -209,7 +228,7 @@ void opcode_B(Chip8 * const chip8)
          * number and NN */
 void opcode_C(Chip8 * const chip8)
 {
-    chip8->V[OPCODE_X(chip8->opcode)] = rand() & OPCODE_NN(chip8->opcode);
+    chip8->V[OPCODE_X(chip8->opcode)] = (rand() % 0xFF) & OPCODE_NN(chip8->opcode);
     chip8->pc += 2;
 }
 
@@ -280,6 +299,7 @@ void opcode_D(Chip8 * const chip8)
             }
         }
     }
+
     chip8->shouldDraw = true;
     chip8->pc += 2;
 }
@@ -309,8 +329,7 @@ void family_E(Chip8 * const chip8)
             break;
 
         default:
-            fprintf(stderr, "[EXNN] OPCODE 0x%04X NOT RECOGNIZED\n", chip8->opcode);
-            exit(1);
+            die("[EXNN] OPCODE 0x%04X NOT RECOGNIZED\n", chip8->opcode);
     } /* EXNN switch */
 }
 
@@ -384,28 +403,27 @@ void family_F(Chip8 * const chip8)
             chip8->memory[chip8->I + 2] = chip8->V[OPCODE_X(chip8->opcode)] % 10;
             break;
 
-        /* FX55: Store registers V0 through VX (including VX) in memory
-         * starting at location I */
+        /* FX55: Store the values of registers V0-VX (including) in memory
+         * starting at address I. I is set to I + X + 1 after operation */
         case 0x55:
             for (int i = 0; i <= OPCODE_X(chip8->opcode); i++) {
                 chip8->memory[chip8->I + i] = chip8->V[i];
             }
-            chip8->I += OPCODE_X(chip8->opcode) + 1;
+
+            chip8->I = chip8->I + OPCODE_X(chip8->opcode) + 1;
             break;
 
-        /* FX65: Read registers V0 through VX (including VX) from memory
-         * starting at location I */
+        /* FX65: Fill registers V0-VX (inclusive) with the values stored in
+         * memory starting at address I. I is set to I + X + 1 after operation */
         case 0x65:
             for (int i = 0; i <= OPCODE_X(chip8->opcode); i++) {
                 chip8->V[i] = chip8->memory[chip8->I + i];
             }
-            chip8->I += OPCODE_X(chip8->opcode) + 1;
+            chip8->I = chip8->I + OPCODE_X(chip8->opcode) + 1;
             break;
 
         default:
-            fprintf(stderr, "[FXNN] OPCODE 0x%04X NOT RECOGNIZED\n", chip8->opcode);
-            exit(1);
-
+            die("[FXNN] OPCODE 0x%04X NOT RECOGNIZED\n", chip8->opcode);
         } /* FXNN switch */
     chip8->pc += 2;
 }
