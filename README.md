@@ -3,8 +3,7 @@ An interpreter for the CHIP-8 programming language written in C
 
 # What is CHIP-8?
 
-
-CHIP-8 CHIP-8 is an interpreted programming language developed by Joseph Weisbecker in the 1970's.
+CHIP-8 is an interpreted programming language developed by Joseph Weisbecker in the 1970's.
 It was initially used on the COSMAC VIP and Telmac 1800 8-bit microcomputers. CHIP-8 programs are meant to be run on a virtual machine, although some people call it an _emulator_, because most of the implementations try to emulate the machines in which it was originally developed and used. Its main objective was to simplify videogame programming at the time, for the machines it was intended for.
 
 # Screenshots
@@ -75,8 +74,8 @@ Display:
 Until now it has only been tested on Debian GNU/Linux 9.3 (Stretch). Support for other platforms is planned.
 The interpreter is written in C99, so a proper compiler is needed. A recent version of GCC or Clang should be fine.
 The only dependencies are [SDL 2](https://www.libsdl.org/) and the make utility to build the project. Installation
-of SDL is very platform specific, so links to the download pages are provided at the end of this file. To install make
-you need to:
+of SDL is very platform specific, so links to the download pages are provided at the end of this file. To install make,
+on Debian bases systems, you need to:
 
 ```
 sudo apt install make
@@ -111,6 +110,6 @@ This is a list of the various resources that I used to develop the interpreter:
 * http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
 * http://mattmik.com/files/chip8/mastering/chip8.html
 * https://en.wikipedia.org/wiki/CHIP-8
-https://www.libsdl.org/download-2.0.php (Main SDL download page)
+* https://www.libsdl.org/download-2.0.php (Main SDL download page)
 * https://wiki.libsdl.org/Installation#Linux.2FUnix (Instructions to install SDL on Linux)
 * https://www.zophar.net/pdroms/chip8.html (Link to download public domain CHIP-8 game ROMS)

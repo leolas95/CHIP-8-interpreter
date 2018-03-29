@@ -120,7 +120,7 @@ void load_rom(Chip8 *chip8, const char * const filename)
     FILE *rom = fopen(filename, "r");
 
     if (!rom) {
-        fprintf(stderr, "%s(): ERROR: COULD NOT OPEN ROM FILE \'%s\'.\n", __func__, filename);
+        fprintf(stderr, "%s:%d:%s(): ERROR: COULD NOT OPEN ROM FILE \'%s\'.\n", __FILE__, __LINE__, __func__, filename);
         exit(1);
     } else {
         printf("%s(): ROM FILE \'%s\' OPENED SUCCESFULLY\n", __func__, filename);

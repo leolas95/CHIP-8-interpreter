@@ -276,7 +276,7 @@ void opcode_D(Chip8 * const chip8)
                  * we would need to "skip by row". To do this
                  * we multiply the row that we want to get by the
                  * number of columns in the row, and add that to the
-                 * column that we want. Expressing it in an ecuation:
+                 * column that we want. Expressing it in an equation:
                  *
                  * i = column + (row * no_of_columns);
                  *
