@@ -22,4 +22,14 @@ debug: $(OBJECTS)
 
 .PHONY: clean
 clean:
-	rm main.o chip8.o opcode_functions.o
+	@if [ -e chip8 ]; then \
+		echo "Deleting chip8"; \
+		rm chip8; \
+	fi
+
+	@if [ -e debug ]; then \
+		echo "Deleting debug"; \
+		rm debug; \
+	fi
+
+	rm $(OBJECTS)
