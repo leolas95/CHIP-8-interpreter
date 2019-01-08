@@ -1,6 +1,9 @@
+# Ignore vim's swap file
+*.*.swp
+*.*~
+# Ignore object files
+*.o
 chip8
 debug
 tags
 log
-*.*.swp
-*.*~

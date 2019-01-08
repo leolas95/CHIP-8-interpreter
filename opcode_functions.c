@@ -32,7 +32,7 @@ void family_0(Chip8 * const chip8)
 
         /* 0x00E0: Clear the display */
         case 0xE0:
-            memset(chip8->gfx, 0, 2048);
+            memset(chip8->gfx, 0, CHIP8_DISPLAY_SIZE);
             chip8->shouldDraw = true;
             break;
         

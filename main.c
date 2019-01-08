@@ -171,6 +171,7 @@ static void handle_key_down(Chip8 *chip8, SDL_Event *e)
 {
     if (e->key.keysym.sym == SDLK_ESCAPE) {
         exit(EXIT_SUCCESS);
+        /* Free resources */
     }
 
     for (int i = 0; i < 16; i++) {
@@ -193,7 +194,7 @@ static void handle_key_up(Chip8 *chip8, SDL_Event *e)
 static void update_screen(Chip8 *chip8, SDL_Texture *texture, SDL_Renderer *renderer)
 {
     chip8->shouldDraw = false;
-    uint32_t pixels[2048];
+    uint32_t pixels[CHIP8_DISPLAY_SIZE];
 
     for (int i = 0; i < CHIP8_DISPLAY_SIZE; i++) {
         uint8_t pixel_is_on = chip8->gfx[i];
